@@ -6,7 +6,15 @@ use crate::{
         AuctionData, AuctionDataExtended, AuctionName, AuctionState, Bid, BidState, PriceFloor,
         WinnerLimit, BASE_AUCTION_DATA_SIZE, MAX_AUCTION_DATA_EXTENDED_SIZE,
     },
-    utils::{assert_derivation, assert_owned_by, create_or_allocate_account_raw},
+    utils::{
+        assert_derivation,
+        assert_owned_by,
+        create_or_allocate_account_raw,
+        spl_token_create_account,// ADDED
+        TokenCreateAccount,// ADDED
+        spl_token_transfer,// ADDED
+        TokenTransferParams,// ADDED
+    },
     EXTENDED, PREFIX,
 };
 
@@ -44,11 +52,20 @@ pub struct CreateAuctionArgs {
     pub tick_size: Option<u64>,
     /// Add a minimum percentage increase each bid must meet.
     pub gap_tick_size_percentage: Option<u8>,
+    /// Target nft mint of auction
+    pub nft_mint: Pubkey,// ADDED
+    /// amount of nft token for selling
+    pub nft_selling_amount: u64,// ADDED
 }
 
 struct Accounts<'a, 'b: 'a> {
     auction: &'a AccountInfo<'b>,
     auction_extended: &'a AccountInfo<'b>,
+    nft_mint: &'a AccountInfo<'b>,// ADDED
+    seller_nft_token_account: &'a AccountInfo<'b>,// ADDED
+    escrow: &'a AccountInfo<'b>,// ADDED
+    auction_nft_account: &'a AccountInfo<'b>,// ADDED
+    token_program: &'a AccountInfo<'b>,// ADDED
     payer: &'a AccountInfo<'b>,
     rent: &'a AccountInfo<'b>,
     system: &'a AccountInfo<'b>,
@@ -63,6 +80,11 @@ fn parse_accounts<'a, 'b: 'a>(
         payer: next_account_info(account_iter)?,
         auction: next_account_info(account_iter)?,
         auction_extended: next_account_info(account_iter)?,
+        nft_mint: next_account_info(account_iter)?,// ADDED
+        seller_nft_token_account: next_account_info(account_iter)?,// ADDED
+        escrow: next_account_info(account_iter)?,// ADDED
+        auction_nft_account: next_account_info(account_iter)?,// ADDED
+        token_program: next_account_info(account_iter)?,// ADDED
         rent: next_account_info(account_iter)?,
         system: next_account_info(account_iter)?,
     };
@@ -125,6 +147,48 @@ pub fn create_auction(
             &[bump],
         ],
     )?;
+    // ADDED START: create auction's token account for target nft
+    // Derive the address we'll store the auction in, and confirm it matches what we expected the
+    // user to provide.
+    let (auction_nft_account_key, nft_account_bump) = Pubkey::find_program_address(&[b"nft", auction_key.as_ref()], program_id);
+    if auction_nft_account_key != *accounts.auction_nft_account.key {
+        return Err(AuctionError::InvalidAuctionAccount.into());
+    }
+    spl_token_create_account(TokenCreateAccount {
+        payer: accounts.payer.clone(),
+        mint: accounts.nft_mint.clone(),
+        account: accounts.auction_nft_account.clone(),
+        authority: accounts.auction.clone(),
+        authority_seeds:
+        &[
+            PREFIX.as_bytes(),
+            program_id.as_ref(),
+            &args.resource.to_bytes(),
+            &[bump],
+        ],
+        token_program: accounts.token_program.clone(),
+        rent: accounts.rent.clone(),
+    })?;
+
+    // check escrow validity and derive escrow seeds
+    let (escrow_key, escrow_seeds) = Pubkey::find_program_address(&[b"escrow", accounts.payer.key.as_ref()], program_id);
+    if escrow_key != *accounts.escrow.key {
+        return Err(AuctionError::InvalidAuctionAccount.into());
+    }
+    spl_token_transfer(TokenTransferParams {
+        source: accounts.seller_nft_token_account.clone(),
+        destination: accounts.auction_nft_account.clone(),
+        authority: accounts.escrow.clone(),
+        authority_signer_seeds:
+        &[
+            b"escrow",
+            accounts.payer.key.as_ref(),
+            &[escrow_seeds]
+        ],
+        token_program: accounts.token_program.clone(),
+        amount: args.nft_selling_amount,
+    })?;
+    // ADDED END
 
     let auction_ext_bump = assert_derivation(
         program_id,
@@ -155,6 +219,8 @@ pub fn create_auction(
 
     // Configure extended
     AuctionDataExtended {
+        nft_mint: args.nft_mint,// ADDED
+        nft_amount: args.nft_selling_amount,// ADDED
         total_uncancelled_bids: 0,
         tick_size: args.tick_size,
         gap_tick_size_percentage: args.gap_tick_size_percentage,

@@ -49,6 +49,10 @@ pub struct CreateAuctionArgsV2 {
     pub instant_sale_price: Option<u64>,
     /// Auction name
     pub name: Option<AuctionName>,
+    /// Target nft mint of auction
+    pub nft_mint: Pubkey,// ADDED
+    /// amount of nft token for selling
+    pub nft_selling_amount: u64,// ADDED
 }
 
 struct Accounts<'a, 'b: 'a> {
@@ -83,6 +87,8 @@ pub fn create_auction_v2(
         program_id,
         accounts,
         CreateAuctionArgs {
+            nft_mint: args.nft_mint,// ADDED
+            nft_selling_amount: args.nft_selling_amount,// ADDED
             winners: args.winners,
             end_auction_at: args.end_auction_at,
             end_auction_gap: args.end_auction_gap,

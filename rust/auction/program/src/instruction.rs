@@ -9,11 +9,12 @@ use solana_program::{
 pub use crate::processor::{
     cancel_bid::CancelBidArgs, claim_bid::ClaimBidArgs, create_auction::CreateAuctionArgs,
     create_auction_v2::CreateAuctionArgsV2, end_auction::EndAuctionArgs, place_bid::PlaceBidArgs,
-    start_auction::StartAuctionArgs,
+    start_auction::StartAuctionArgs, delegate::DelegateArgs,
 };
 
 #[derive(Clone, BorshSerialize, BorshDeserialize, PartialEq)]
 pub enum AuctionInstruction {
+
     /// Cancel a bid on a running auction.
     ///   0. `[signer]` The bidders primary account, for PDA calculation/transit auth.
     ///   1. `[writable]` The bidders token account they'll receive refund with
@@ -92,6 +93,8 @@ pub enum AuctionInstruction {
     ///   3. `[]` Rent sysvar
     ///   4. `[]` System account
     CreateAuctionV2(CreateAuctionArgsV2),
+
+    Delegate(DelegateArgs),
 }
 
 /// Creates an CreateAuction instruction.

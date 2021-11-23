@@ -134,6 +134,10 @@ pub enum AuctionError {
     /// Gap tick size percentage must be between 0 and 100
     #[error("Gap tick size percentage must be between 0 and 100")]
     InvalidGapTickSizePercentage,
+
+    /// Delegate Error
+    #[error("Delegate Error")]
+    InvalidDelegate,
 }
 
 impl PrintProgramError for AuctionError {

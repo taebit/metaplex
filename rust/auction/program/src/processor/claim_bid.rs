@@ -210,5 +210,7 @@ pub fn claim_bid(
     bidder_pot.emptied = true;
     bidder_pot.serialize(&mut *accounts.bidder_pot.data.borrow_mut())?;
 
+    // TODO: transfer nft from auction's account 
+
     Ok(())
 }

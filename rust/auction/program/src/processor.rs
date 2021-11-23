@@ -16,6 +16,7 @@ pub mod end_auction;
 pub mod place_bid;
 pub mod set_authority;
 pub mod start_auction;
+pub mod delegate;
 
 // Re-export submodules handlers + associated types for other programs to consume.
 pub use cancel_bid::*;
@@ -26,6 +27,7 @@ pub use end_auction::*;
 pub use place_bid::*;
 pub use set_authority::*;
 pub use start_auction::*;
+pub use delegate::*;
 
 pub fn process_instruction(
     program_id: &Pubkey,
@@ -44,8 +46,11 @@ pub fn process_instruction(
         AuctionInstruction::PlaceBid(args) => place_bid(program_id, accounts, args),
         AuctionInstruction::SetAuthority => set_authority(program_id, accounts),
         AuctionInstruction::StartAuction(args) => start_auction(program_id, accounts, args),
+        AuctionInstruction::Delegate(args) => delegate(program_id, accounts, args),
     }
 }
+
+
 
 /// Structure with pricing floor data.
 #[repr(C)]
@@ -98,13 +103,17 @@ pub struct AuctionData {
 // Alias for auction name.
 pub type AuctionName = [u8; 32];
 
-pub const MAX_AUCTION_DATA_EXTENDED_SIZE: usize = 8 + 9 + 2 + 9 + 33 + 158;
+pub const MAX_AUCTION_DATA_EXTENDED_SIZE: usize = 32 + 8 + 8 + 9 + 2 + 9 + 33 + 158;// MODIFIED
 // Further storage for more fields. Would like to store more on the main data but due
 // to a borsh issue that causes more added fields to inflict "Access violation" errors
 // during redemption in main Metaplex app for no reason, we had to add this nasty PDA.
 #[repr(C)]
 #[derive(Clone, BorshSerialize, BorshDeserialize, PartialEq, Debug)]
 pub struct AuctionDataExtended {
+    /// Target nft mint of auction
+    pub nft_mint: Pubkey,// ADDED
+    /// Target nft amount for selling
+    pub nft_amount: u64,// ADDED
     /// Total uncancelled bids
     pub total_uncancelled_bids: u64,
     // Unimplemented fields
@@ -139,7 +148,7 @@ impl AuctionDataExtended {
 
     fn find_instant_sale_beginning<'a>(data: &'a Ref<'a, &'a mut [u8]>) -> Option<usize> {
         // total_uncancelled_bids + tick_size Option
-        let mut instant_sale_beginning = 8;
+        let mut instant_sale_beginning = 48;// MODIFIED
 
         // gaps for tick_size and gap_tick_size_percentage
         let gaps = [9, 2];
