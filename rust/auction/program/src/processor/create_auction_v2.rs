@@ -58,6 +58,11 @@ pub struct CreateAuctionArgsV2 {
 struct Accounts<'a, 'b: 'a> {
     auction: &'a AccountInfo<'b>,
     auction_extended: &'a AccountInfo<'b>,
+    nft_mint: &'a AccountInfo<'b>,// ADDED
+    seller_nft_token_account: &'a AccountInfo<'b>,// ADDED
+    escrow: &'a AccountInfo<'b>,// ADDED
+    auction_nft_account: &'a AccountInfo<'b>,// ADDED
+    token_program: &'a AccountInfo<'b>,// ADDED
     payer: &'a AccountInfo<'b>,
     rent: &'a AccountInfo<'b>,
     system: &'a AccountInfo<'b>,
@@ -72,6 +77,11 @@ fn parse_accounts<'a, 'b: 'a>(
         payer: next_account_info(account_iter)?,
         auction: next_account_info(account_iter)?,
         auction_extended: next_account_info(account_iter)?,
+        nft_mint: next_account_info(account_iter)?,// ADDED
+        seller_nft_token_account: next_account_info(account_iter)?,// ADDED
+        escrow: next_account_info(account_iter)?,// ADDED
+        auction_nft_account: next_account_info(account_iter)?,// ADDED
+        token_program: next_account_info(account_iter)?,// ADDED
         rent: next_account_info(account_iter)?,
         system: next_account_info(account_iter)?,
     };
