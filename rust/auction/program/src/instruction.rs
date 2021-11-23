@@ -33,8 +33,13 @@ pub enum AuctionInstruction {
     ///   0. `[signer]` The account creating the auction, which is authorised to make changes.
     ///   1. `[writable]` Uninitialized auction account.
     ///   2. `[writable]` Auction extended data account (pda relative to auction of ['auction', program id, vault key, 'extended']).
-    ///   3. `[]` Rent sysvar
-    ///   4. `[]` System account
+    ///   3. `[]` target nft mint
+    ///   4. `[writable]` token account for selling token
+    ///   5. `[]` Escrow(Vault) for specific user's nft tokens
+    ///   6. `[writable]` auction's escrow which take token from seller's account during auction
+    ///   7. `[]` SPL Token Program
+    ///   8. `[]` Rent sysvar
+    ///   9. `[]` System account
     CreateAuction(CreateAuctionArgs),
 
     /// Move SPL tokens from winning bid to the destination account.
@@ -90,10 +95,20 @@ pub enum AuctionInstruction {
     ///   0. `[signer]` The account creating the auction, which is authorised to make changes.
     ///   1. `[writable]` Uninitialized auction account.
     ///   2. `[writable]` Auction extended data account (pda relative to auction of ['auction', program id, vault key, 'extended']).
-    ///   3. `[]` Rent sysvar
-    ///   4. `[]` System account
+    ///   3. `[]` target nft mint
+    ///   4. `[writable]` token account for selling token
+    ///   5. `[]` Escrow(Vault) for specific user's nft tokens
+    ///   6. `[writable]` auction's escrow which take token from seller's account during auction
+    ///   7. `[]` SPL Token Program
+    ///   8. `[]` Rent sysvar
+    ///   9. `[]` System account
     CreateAuctionV2(CreateAuctionArgsV2),
 
+    ///   0. `[signer]` The account of creator
+    ///   1. `[writable]` target nft token mint
+    ///   2. `[]` escrow for user's nft token account and mint
+    ///   3. `[writable]` target nft token account
+    ///   4. `[]` SPL Token Program
     Delegate(DelegateArgs),
 }
 
